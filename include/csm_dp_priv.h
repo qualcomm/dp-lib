@@ -12,7 +12,7 @@ extern "C" {
 
 #include <pthread.h>
 #include <semaphore.h>
-#include <linux/csm_dp_ioctl.h>
+#include <linux/qcom_csm_dp_ioctl.h>
 
 #include "csm_dp_arch.h"
 
@@ -65,11 +65,11 @@ struct csm_dp_ring_hdl {
 	struct csm_dp_mem_loc loc;
 	unsigned int ring_sz;
 
-	volatile csm_dp_ring_index_t *cons_head;	/* consumer index header */
-	volatile csm_dp_ring_index_t *cons_tail;	/* consumer index tail */
-	volatile csm_dp_ring_index_t *prod_head;	/* producer index header */
-	volatile csm_dp_ring_index_t *prod_tail;	/* producer index tail */
-	volatile csm_dp_ring_element_t *ringbuf;	/* ring element */
+	volatile unsigned int *cons_head;	/* consumer index header */
+	volatile unsigned int *cons_tail;	/* consumer index tail */
+	volatile unsigned int *prod_head;	/* producer index header */
+	volatile unsigned int *prod_tail;	/* producer index tail */
+	volatile struct csm_dp_ring_element *ringbuf;	/* ring element */
 	struct csm_dp_ring_opstats opstats;
 };
 

@@ -77,7 +77,6 @@ struct cmd_option {
 	unsigned int tx_affinity;
 	unsigned int mem_pool_buf_size;
 	unsigned int mem_pool_buf_count;
-	unsigned int tx_mirror;
 	unsigned int syslog;
 	unsigned int rx_poll_inteval_us;
 	unsigned int num_vf;
@@ -168,11 +167,12 @@ static struct cmd_option cmdline_option = {
 	.tx_affinity = 0,
 	.mem_pool_buf_size = 0,
 	.mem_pool_buf_count = DEFAULT_DL_BUFCNT,
-	.tx_mirror = 0,
 	.syslog = 0,
 	.rx_poll_inteval_us = DEFAULT_RX_POLL_INTVAL_US,
 	.num_vf = 1,
 	.run_both = 0,
+	.bus_num = 1,
+	.vf_num = 1
 };
 
 struct csm_dp_cap_defcfg capcfg = {
@@ -394,9 +394,6 @@ static void __parse_cmdline(int argc, char *argv[]) {
 		case 'h':
 			printf("%s\n", __usage);
 			exit(0);
-		case 'm':
-			cmdline_option.tx_mirror = 1;
-			break;
 		case 's':
 			cmdline_option.syslog = 1;
 			break;
@@ -1389,8 +1386,6 @@ static void *__tx_main(void *arg)
 
 		if (cmdline_option.tx_sg)
 			flags |= CSM_DP_TX_FLAG_SG;
-		if (cmdline_option.tx_mirror)
-			flags |= CSM_DP_TX_FLAG_MIRROR;
 
 		if (cmdline_option.tx_sg)
 			ret = csm_dp_send(dp_handle, ch, iov, CSM_DP_MAX_SG_IOV_SIZE, flags);

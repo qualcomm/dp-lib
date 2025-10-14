@@ -94,9 +94,9 @@ static const struct csm_dp_cap_defcfg __default_cap_cfg = {
 
 /* declare */
 static int __ring_get_element(uint16_t, struct csm_dp_ring_hdl *,
-				csm_dp_ring_element_data_t *);
+				unsigned long *);
 static int __ring_put_element(uint16_t, struct csm_dp_ring_hdl *,
-				csm_dp_ring_element_data_t);
+				unsigned long);
 
 static int __csm_dp_rtx_hook(
 	uint16_t handle,
@@ -382,7 +382,7 @@ static void __mempool_cfg_dump(uint16_t handle, struct csm_dp_mempool_cfg *cfg)
 static void *__default_alloc_buf(uint16_t handle, struct csm_dp_mempool_hdl *hdl)
 {
 	struct csm_dp_mem_hdl *mem_hdl = &hdl->mem_hdl;
-	csm_dp_ring_element_data_t offset;
+	unsigned long offset;
 	char *buf = NULL;
 	struct csm_dp_buf_cntrl *p;
 
@@ -426,7 +426,7 @@ static void __default_free_buf(uint16_t handle, struct csm_dp_mempool_hdl *hdl, 
 	struct csm_dp_buf_cntrl *p;
 
 	/* Note ring entry is pointing to a buffer after control overhead */
-	csm_dp_ring_element_data_t offset =
+	unsigned long offset =
 		get_aligned_offset(&hdl->mem_hdl, buf) +
 			hdl->mem_hdl.buf_overhead_sz;
 	buf = (char *)hdl->mem_hdl.base + offset;
@@ -493,11 +493,11 @@ static int __init_ring_hdl(uint16_t handle,
 	hdl->loc.mmap = true;
 
 	hdl->ring_sz = cfg->size;
-	hdl->cons_head = (csm_dp_ring_index_t *)(ptr + cfg->cons_head_off);
-	hdl->cons_tail = (csm_dp_ring_index_t *)(ptr + cfg->cons_tail_off);
-	hdl->prod_head = (csm_dp_ring_index_t *)(ptr + cfg->prod_head_off);
-	hdl->prod_tail = (csm_dp_ring_index_t *)(ptr + cfg->prod_tail_off);
-	hdl->ringbuf = (csm_dp_ring_element_t *)(ptr + cfg->ringbuf_off);
+	hdl->cons_head = (unsigned int *)(ptr + cfg->cons_head_off);
+	hdl->cons_tail = (unsigned int *)(ptr + cfg->cons_tail_off);
+	hdl->prod_head = (unsigned int *)(ptr + cfg->prod_head_off);
+	hdl->prod_tail = (unsigned int *)(ptr + cfg->prod_tail_off);
+	hdl->ringbuf = (struct csm_dp_ring_element *)(ptr + cfg->ringbuf_off);
 
 	DP_LOG_DEBUG(handle, "Ring is mapped, addr=%p length=0x%lx cons_head=%p cons_tail=%p "
 		  "prod_head=%p prod_tail=%p ringbuf=%p\n",
@@ -520,7 +520,7 @@ static int __ring_hdl_alloc_ring(uint16_t handle,
 				 unsigned int elements)
 {
 	unsigned int ring_sz = calc_ring_size(elements);
-	unsigned int alloc_sz = ring_sz * sizeof(csm_dp_ring_element_t);
+	unsigned int alloc_sz = ring_sz * sizeof(struct csm_dp_ring_element);
 	char *ptr;
 
 	if (!ring_sz)
@@ -534,19 +534,19 @@ static int __ring_hdl_alloc_ring(uint16_t handle,
 	}
 
 	init_mem_loc(&hdl->loc, ptr, alloc_sz, false);
-	hdl->prod_head = (csm_dp_ring_index_t *)ptr;
+	hdl->prod_head = (unsigned int *)ptr;
 	*hdl->prod_head = 0;
 	ptr += CSM_DP_L1_CACHE_BYTES;
-	hdl->prod_tail = (csm_dp_ring_index_t *)ptr;
+	hdl->prod_tail = (unsigned int *)ptr;
 	*hdl->prod_tail = 0;
 	ptr += CSM_DP_L1_CACHE_BYTES;
-	hdl->cons_head = (csm_dp_ring_index_t *)ptr;
+	hdl->cons_head = (unsigned int *)ptr;
 	*hdl->cons_head = 0;
 	ptr += CSM_DP_L1_CACHE_BYTES;
-	hdl->cons_tail = (csm_dp_ring_index_t *)ptr;
+	hdl->cons_tail = (unsigned int *)ptr;
 	*hdl->cons_tail = 0;
 	ptr += CSM_DP_L1_CACHE_BYTES;
-	hdl->ringbuf = (csm_dp_ring_element_t *)ptr;
+	hdl->ringbuf = (struct csm_dp_ring_element *)ptr;
 	hdl->ring_sz = ring_sz;
 	return 0;
 }
@@ -554,11 +554,11 @@ static int __ring_hdl_alloc_ring(uint16_t handle,
 /* To read one element from ring buffer */
 static int __ring_get_element(uint16_t handle,
 			      struct csm_dp_ring_hdl *hdl,
-			      csm_dp_ring_element_data_t *pdata)
+			      unsigned long *pdata)
 {
-	register csm_dp_ring_index_t cons_head, cons_next;
-	register csm_dp_ring_index_t prod_tail, mask;
-	csm_dp_ring_element_data_t data;
+	register unsigned int cons_head, cons_next;
+	register unsigned int prod_tail, mask;
+	unsigned long data;
 
 	if (!hdl || !pdata) {
 		DP_LOG_ERR(handle, "%s: null pointer!\n", __func__);
@@ -606,10 +606,10 @@ again:
 /* To put one element into ring buffer */
 static int __ring_put_element(uint16_t handle,
 			      struct csm_dp_ring_hdl *hdl,
-			      csm_dp_ring_element_data_t data)
+			      unsigned long data)
 {
-	register csm_dp_ring_index_t prod_head, prod_next;
-	register csm_dp_ring_index_t cons_tail, mask;
+	register unsigned int prod_head, prod_next;
+	register unsigned int cons_tail, mask;
 
 	if (!hdl) {
 		DP_LOG_ERR(handle, "%s: null pointer!\n", __func__);
@@ -943,7 +943,7 @@ static int __init_cap_event_hdl(uint16_t handle,
 	}
 
 	for (i = 0; i < event_cnt; i++)
-		__ring_put_element(handle, &hdl->free_ring, (csm_dp_ring_element_data_t)&event[i]);
+		__ring_put_element(handle, &hdl->free_ring, (unsigned long)&event[i]);
 
 	hdl->event_mem = event;
 	return 0;
@@ -1021,7 +1021,7 @@ static inline struct csm_dp_cap_event *__ring_get_cap_event(uint16_t handle,
 {
 	struct csm_dp_cap_event *event;
 
-	if (__ring_get_element(handle, hdl, (csm_dp_ring_element_data_t *)&event))
+	if (__ring_get_element(handle, hdl, (unsigned long *)&event))
 		return NULL;
 	return event;
 }
@@ -1031,7 +1031,7 @@ static inline void __ring_put_cap_event(uint16_t handle,
 					struct csm_dp_cap_event *event)
 {
 	if (event)
-		__ring_put_element(handle, hdl, (csm_dp_ring_element_data_t)event);
+		__ring_put_element(handle, hdl, (unsigned long)event);
 }
 
 static int __init_dp_log(const struct csm_dp_log_cfg *cfg)
@@ -1744,9 +1744,6 @@ int csm_dp_send(uint16_t handle,
 	req.ch = ch;
 	req.iov.iov_base = iov;
 	req.iov.iov_len = iovcnt;
-	if (flag & CSM_DP_TX_FLAG_MIRROR) {
-		req.flags |= CSM_DP_IOCTL_TX_FLAG_MIRROR;
-	}
 	ret = ioctl(__libData[bus][vf].fd,
 		    (flag & CSM_DP_TX_FLAG_SG) ? CSM_DP_IOCTL_SG_TX : CSM_DP_IOCTL_TX,
 		    &req);
@@ -1778,7 +1775,7 @@ static int __csm_dp_recv(
 	unsigned int vf = csm_dp_get_vf_index(handle);
 	struct csm_dp_mem_hdl *memhdl;
 	struct csm_dp_mempool_hdl *hdl;
-	csm_dp_ring_element_data_t val;
+	unsigned long val;
 	unsigned int n = 0, packet_start = 0, packet_iovcnt = 0, remain = iovcnt;
 	int ret;
 	struct csm_dp_buf_cntrl *p;
@@ -2668,7 +2665,7 @@ csm_dp_query_txbuf_status(uint16_t dev_handle,
 	struct csm_dp_bufobj *bufobj;
 	int ref_cnt;
 	struct csm_dp_buf_cntrl *p;
-	csm_dp_ring_element_data_t offset;
+	unsigned long offset;
 	csm_dp_txbuf_status_e ret = CSM_DP_TX_BUF_STATUS_TX_QUERY_ERR;
 
 	if (bufptr == NULL)

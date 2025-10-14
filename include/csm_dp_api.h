@@ -12,7 +12,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <limits.h>
-#include <linux/csm_dp_ioctl.h>
+#include <linux/qcom_csm_dp_ioctl.h>
 
 /** @brief macro for default buffer size */
 #define CSM_DP_DEFAULT_CONTROL_BUFSZ	(4 * 1024)
@@ -84,11 +84,9 @@ typedef int (*csm_dp_cap_sg_msg_cb)(
  *  @param CSM_DP_TX_FLAG_DONT_FREE - the library shouldn't free the Tx buffers. The application
  *     must free the buffers later by either re-sending them with the flag cleared or by
  *     using csm_dp_free_unsent_txbuf().
- *  @param CSM_DP_TX_FLAG_MIRROR - request device to mirror the buffers into debug interface
  */
 #define CSM_DP_TX_FLAG_SG	0x10
 #define CSM_DP_TX_FLAG_DONT_FREE 0x20
-#define CSM_DP_TX_FLAG_MIRROR	0x40
 
 /** @brief bitmap definition of flag in RX API
  *  @param CSM_DP_RX_FLAG_ALL - to receive all messages
