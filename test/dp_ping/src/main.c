@@ -334,7 +334,7 @@ static void __parse_cmdline(int argc, char *argv[]) {
 		{0, 0, 0, 0}
 	};
 
-	while ((c = getopt_long(argc, argv, "l:n:c:t:i:b:r:d:p:B:D:V:svxhmRLSGCPNA:", long_options, &option_index)) != EOF) {
+	while ((c = getopt_long(argc, argv, "l:n:c:t:i:b:r:d:p:B:D:V:svxhRLSGCPNA:", long_options, &option_index)) != EOF) {
 		switch (c) {
 		// short options
 		case 'l':
